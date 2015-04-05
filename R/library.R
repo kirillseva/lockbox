@@ -5,12 +5,12 @@
 #' \code{getOption("lockbox.lib")} or \code{"~/.R/lockbox"} if that option
 #' is not set.
 #'
-#' @param locked_package locked_package. In particular, \code{name} and 
+#' @param locked_package locked_package. In particular, \code{name} and
 #'    \code{version} elements will be used. If the package version is
 #'    not present in the lockbox, we will attempt to download it from
 #'    CRAN or github.
 #' @note The weird name is a derivative of a \href{http://stackoverflow.com/questions/612189/why-are-exclamation-marks-used-in-ruby-methods}{Rubyism}
-#'    to indicate some serious side effects can occur! In this case, we 
+#'    to indicate some serious side effects can occur! In this case, we
 #'    download the package from CRAN or github if the name + version combo
 #'    does not exist.
 `ensure_package_exists_in_lockbox!` <- function(locked_package) {
@@ -39,9 +39,29 @@ install_package <- function(locked_package) {
   UseMethod("install_package")
 }
 
+# Helpfully borrowed from https://github.com/christophergandrud/repmis/blob/master/R/InstallOldPackages.R
+# Did not simply import the function because it introduces too many dependencies
+install_old_CRAN_package <- function(name, version, repo = "http://cran.r-project.org") {
+
+  ## list available packages on the repo. Maybe we can simply install.packages?
+  available <- available.packages(contriburl =
+    contrib.url(repos = "http://cran.us.r-project.org", type = "source"))
+  available <- data.frame(unique(available[, c("Package", "Version")]))
+  pkg <- available[available$Package == name, ]
+
+  ## simply install.packages if version happens to be the latest available on CRAN
+  if (dim(pkg)[1] == 1 && pkg$Version == version) return(install.packages(name))
+
+  ## if we did not find the package on CRAN - try CRAN archive
+  from <- paste0(repo, "/src/contrib/Archive/", name, "/", name, "_", version, ".tar.gz")
+  pkg.tarball <- tempfile(fileext = ".tar.gz")
+  download.file(url = from, destfile = pkg.tarball)
+  install.packages(pkg.tarball, repos = NULL, type = "source")
+  unlink(pkg.tarball)
+}
+
 install_package.CRAN <- function(locked_package) {
-  # TODO: (RK) Fetch correct version?
-  install_locked_package(locked_package, install.packages(locked_package$name))
+  install_locked_package(locked_package, install_old_CRAN_package(locked_package$name, locked_package$version))
 }
 
 install_package.github <- function(locked_package) {
@@ -76,7 +96,7 @@ install_locked_package <- function(locked_package, installing_expr) {
 }
 
 #' Find packages whose version does not match the current library's version.
-#' 
+#'
 #' @param locked_package locked_package.
 #' @return TRUE or FALSE according as the current library's package version
 #'   is incorrect.
@@ -114,4 +134,3 @@ description_file_for <- function(package_name) {
     NULL
   }
 }
-
