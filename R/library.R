@@ -50,7 +50,10 @@ install_old_CRAN_package <- function(name, version, repo = "http://cran.r-projec
   pkg <- available[available$Package == name, ]
 
   ## simply install.packages if version happens to be the latest available on CRAN
-  if (dim(pkg)[1] == 1 && pkg$Version == version) return(install.packages(name))
+  ## You can specify the fastest CRAN mirror by setting the `lockbox.CRAN_mirror` option
+  ## Or Rstudio mirror will be used by default
+  repos <- getOption('lockbox.CRAN_mirror') %||% c(CRAN = "http://cran.rstudio.com")
+  if (dim(pkg)[1] == 1 && pkg$Version == version) return(install.packages(name, repos = repos))
 
   ## if we did not find the package on CRAN - try CRAN archive
   from <- paste0(repo, "/src/contrib/Archive/", name, "/", name, "_", version, ".tar.gz")

@@ -6,7 +6,7 @@
 #' on demand. When a given set of versioned packages is requested, lockbox will
 #' unload \emph{all other packages} and ensure only the given set of packages
 #' with their respective versions are present.
-#' 
+#'
 #' Since lockbox maintains a separate directory for its library, it will not
 #' interfere with R's usual packages or libraries when R is restarted.
 #'
@@ -28,7 +28,7 @@ lockbox.list <- function(lock) {
   set_transient_library()
 
   lock <- lapply(lock, as.locked_package)
-  
+
   ## Find the packages whose version does not match the current library.
   mismatches <- vapply(lock, version_mismatch, logical(1))
 
@@ -37,7 +37,7 @@ lockbox.list <- function(lock) {
     align(lock[mismatches])
 
     ## And re-build our search path.
-    rebuild(lock) 
+    rebuild(lock)
   })
 }
 
@@ -50,7 +50,7 @@ as.locked_package <- function(list) {
   }
 
   if (is.na(package_version(list$version))) {
-    stop(sprintf("Invalid package %s version %s.", 
+    stop(sprintf("Invalid package %s version %s.",
                  sQuote(list$name), sQuote(list$version)))
   } else {
     list$version <- package_version(list$version)
@@ -81,4 +81,3 @@ lockbox_transient_dir <- function() {
   getOption("lockbox.transient_dir") %||%
     normalizePath("~/.R/lockbox_transient", mustWork = FALSE)
 }
-
